@@ -11,6 +11,7 @@ import com.appboy.enums.NotificationSubscriptionType;
 import com.appboy.enums.CardCategory;
 import com.appboy.events.FeedUpdatedEvent;
 import com.appboy.events.IEventSubscriber;
+import com.appboy.models.cards.Card;
 import com.appboy.models.outgoing.AppboyProperties;
 import com.appboy.models.outgoing.FacebookUser;
 import com.appboy.models.outgoing.TwitterUser;
@@ -24,6 +25,9 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeArray;
 
 import org.json.JSONObject;
 
@@ -386,6 +390,59 @@ public class AppboyReactBridge extends ReactContextBaseJavaModule {
       }
     }
     return cardCategory;
+  }
+
+  @ReactMethod
+  public void logFeedCardClick(String id) {
+    Appboy.getInstance(getReactApplicationContext()).logFeedCardClick(id);
+  }
+
+  @ReactMethod
+  public void logFeedCardImpression(String id) {
+    Appboy.getInstance(getReactApplicationContext()).logFeedCardImpression(id);
+  }
+  @ReactMethod
+  public void logFeedDisplayed() {
+    Appboy.getInstance(getReactApplicationContext()).logFeedDisplayed();
+  }
+
+  @ReactMethod
+  public void getFeedCards(final Callback callback) {
+    IEventSubscriber<FeedUpdatedEvent> feedUpdatedSubscriber = null;
+
+      feedUpdatedSubscriber = new IEventSubscriber<FeedUpdatedEvent>() {
+        @Override
+        public void trigger(FeedUpdatedEvent feedUpdatedEvent) {
+          synchronized (mCallbackWasCalledMapLock) {
+            if (mCallbackWasCalledMap.get(callback) == null || mCallbackWasCalledMap.get(callback) != null && !mCallbackWasCalledMap.get(callback).booleanValue()) {
+              mCallbackWasCalledMap.put(callback, new Boolean(true));
+
+              WritableArray array = new WritableNativeArray();
+              List<Card> cards = feedUpdatedEvent.getFeedCards();
+
+              for (Card card : cards) {
+                try {
+                  WritableMap cardMap = AppboyReactUtils.convertJsonToMap(card.forJsonPut());
+                  array.pushMap(cardMap);
+                } catch(Exception e) {
+                  AppboyLogger.w(TAG, "Warning: Could not parse Feed Card to writable map.");
+                }
+              }
+
+              reportResultWithCallback(callback, null, array);
+            }
+          }
+
+          // Remove this listener from the feed subscriber map and from Appboy
+          Appboy.getInstance(getReactApplicationContext()).removeSingleSubscription(mFeedSubscriberMap.get(callback), FeedUpdatedEvent.class);
+          mFeedSubscriberMap.remove(callback);
+        }
+      };
+
+      // Put the subscriber into a map so we can remove it later from future subscriptions
+      mFeedSubscriberMap.put(callback, feedUpdatedSubscriber);
+      Appboy.getInstance(getReactApplicationContext()).subscribeToFeedUpdates(feedUpdatedSubscriber);
+      Appboy.getInstance(getReactApplicationContext()).requestFeedRefresh();
   }
 
   // Registers a short-lived FeedUpdatedEvent subscriber, requests a feed refresh from cache, and and returns the requested card count in the callback

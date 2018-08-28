@@ -389,6 +389,34 @@ var ReactAppboy = {
   },
 
   /**
+   * Fetches the list of cards from News Feed.
+   */
+  getFeedCards: function(callback) {
+    callFunctionWithCallback(AppboyReactBridge.getFeedCards, [], callback);
+  },
+
+  /**
+   * Reports a feed card was clicked.
+   */
+  logFeedCardClick: function(id) {
+    AppboyReactBridge.logFeedCardClick(id);
+  },
+
+  /**
+   * Reports a feed card was displayed to the user.
+   */
+  logFeedCardImpression: function(id) {
+    AppboyReactBridge.logFeedCardImpression(id);
+  },
+
+  /**
+   * Reports that the feed was displayed.
+   */
+  logFeedDisplayed: function() {
+    AppboyReactBridge.logFeedDisplayed();
+  },
+
+  /**
   * Returns the current number of News Feed cards for the given category.
   * @param {CardCategory} category - Card category. Use ReactAppboy.CardCategory.ALL to get the total card count.
   * @param {function(error, result)} callback - A callback that receives the function call result.
