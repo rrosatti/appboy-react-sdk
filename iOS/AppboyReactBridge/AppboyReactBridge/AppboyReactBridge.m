@@ -264,6 +264,51 @@ RCT_EXPORT_METHOD(requestFeedRefresh) {
   [[Appboy sharedInstance] requestFeedRefresh];
 }
 
+RCT_EXPORT_METHOD(getFeedCards:(RCTResponseSenderBlock)callback) {
+  NSMutableArray *jsonCards = [NSMutableArray array];
+  NSArray *cards = [[Appboy sharedInstance].feedController getCardsInCategories:ABKCardCategoryAll];
+
+  for (ABKCard *card in cards) {
+    NSError *error = nil;
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:[card serializeToData] options:0 error:&error];
+
+    if (dict != nil && error == nil) {
+      [jsonCards addObject:dict];
+    } else {
+      RCTLogInfo(@"Warning: Error serializing feed card to JSON.");
+      error = nil;
+    }
+  }
+
+  [self reportResultWithCallback:callback andError:nil andResult:jsonCards];
+}
+
+RCT_EXPORT_METHOD(logFeedCardClick: (NSString *)id) {
+  NSArray *cards = [[Appboy sharedInstance].feedController getCardsInCategories:ABKCardCategoryAll];
+
+  for (ABKCard *card in cards) {
+    if ([card.idString isEqualToString:id]) {
+      [card logCardClicked];
+      break;
+    }
+  }
+}
+
+RCT_EXPORT_METHOD(logFeedCardImpression: (NSString *)id) {
+  NSArray *cards = [[Appboy sharedInstance].feedController getCardsInCategories:ABKCardCategoryAll];
+
+  for (ABKCard *card in cards) {
+    if ([card.idString isEqualToString:id]) {
+      [card logCardImpression];
+      break;
+    }
+  }
+}
+
+RCT_EXPORT_METHOD(logFeedDisplayed) {
+  [[Appboy sharedInstance] logFeedDisplayed];
+}
+
 RCT_EXPORT_METHOD(wipeData) {
   [Appboy wipeDataAndDisableForAppRun];
 }
