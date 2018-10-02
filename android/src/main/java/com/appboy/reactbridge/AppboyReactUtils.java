@@ -32,6 +32,8 @@ public class AppboyReactUtils {
         map.putDouble(key, (Double) value);
       } else if (value instanceof String)  {
         map.putString(key, (String) value);
+      } else if (value == JSONObject.NULL) {
+        map.putNull(key);
       } else {
         map.putString(key, value.toString());
       }
