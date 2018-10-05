@@ -268,6 +268,11 @@ RCT_EXPORT_METHOD(getFeedCards:(RCTResponseSenderBlock)callback) {
   NSMutableArray *jsonCards = [NSMutableArray array];
   NSArray *cards = [[Appboy sharedInstance].feedController getCardsInCategories:ABKCardCategoryAll];
 
+  if (cards.count == 0 && [Appboy sharedInstance].feedController.lastUpdate == nil) {
+    [self reportResultWithCallback:callback andError:@"No fetch completed" andResult:nil];
+    return;
+  }
+
   for (ABKCard *card in cards) {
     NSError *error = nil;
     NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:[card serializeToData] options:0 error:&error];
