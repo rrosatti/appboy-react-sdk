@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.appboy.Appboy;
-import com.appboy.services.AppboyLocationService;
 import com.appboy.enums.Gender;
 import com.appboy.enums.Month;
 import com.appboy.enums.NotificationSubscriptionType;
@@ -13,10 +12,13 @@ import com.appboy.events.FeedUpdatedEvent;
 import com.appboy.events.IEventSubscriber;
 import com.appboy.models.cards.Card;
 import com.appboy.models.outgoing.AppboyProperties;
+import com.appboy.models.outgoing.AttributionData;
 import com.appboy.models.outgoing.FacebookUser;
 import com.appboy.models.outgoing.TwitterUser;
+import com.appboy.services.AppboyLocationService;
 import com.appboy.support.AppboyLogger;
 import com.appboy.ui.activities.AppboyFeedActivity;
+import com.appboy.ui.inappmessage.AppboyInAppMessageManager;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -34,6 +36,7 @@ import org.json.JSONObject;
 import java.lang.Integer;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,6 +93,11 @@ public class AppboyReactBridge extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void addAlias(String aliasName, String aliasLabel) {
+    Appboy.getInstance(getReactApplicationContext()).getCurrentUser().addAlias(aliasName, aliasLabel);
+  }
+
+  @ReactMethod
   public void registerPushToken(String token) {
     Appboy.getInstance(getReactApplicationContext()).registerAppboyPushMessages(token);
   }
@@ -117,11 +125,22 @@ public class AppboyReactBridge extends ReactContextBaseJavaModule {
             try {
               properties.addProperty(key, eventProperties.getInt(key));
             } catch (Exception e2) {
-              AppboyLogger.e(TAG, "Could not parse ReadableType.Number from ReadableMap");
+              AppboyLogger.e(TAG, "Could not parse ReadableType.Number from ReadableMap for key: " + key);
             }
           }
+        } else if (readableType == ReadableType.Map) {
+          try {
+            if (eventProperties.getMap(key).getString("type").equals("UNIX_timestamp")) {
+              double unixTimestamp = eventProperties.getMap(key).getDouble("value");
+              properties.addProperty(key, new Date((long)unixTimestamp));
+            } else {
+              AppboyLogger.e(TAG, "Unsupported ReadableMap type received for key: " + key);
+            }
+          } catch (Exception e) {
+            AppboyLogger.e(TAG, "Could not determine type from ReadableMap for key: " + key);
+          }
         } else {
-          AppboyLogger.e(TAG, "Could not map ReadableType to an AppboyProperty value");
+          AppboyLogger.e(TAG, "Could not map ReadableType to an AppboyProperty value for key: " + key);
         }
       }
     }
@@ -264,6 +283,11 @@ public class AppboyReactBridge extends ReactContextBaseJavaModule {
   @ReactMethod
   public void setPhoneNumber(String phoneNumber) {
     Appboy.getInstance(getReactApplicationContext()).getCurrentUser().setPhoneNumber(phoneNumber);
+  }
+
+  @ReactMethod
+  public void setLanguage(String language) {
+    Appboy.getInstance(getReactApplicationContext()).getCurrentUser().setLanguage(language);
   }
 
   @ReactMethod
@@ -552,6 +576,27 @@ public class AppboyReactBridge extends ReactContextBaseJavaModule {
     Appboy.getInstance(getReactApplicationContext()).getCurrentUser().setLocationCustomAttribute(key, latitude, longitude);
     // Always return true as Android doesn't support getting a result from setLocationCustomAttribute().
     reportResultWithCallback(callback, null, true);
+  }
+
+  @ReactMethod
+  public void requestContentCardsRefresh() {
+    Appboy.getInstance(getReactApplicationContext()).requestContentCardsRefresh(false);
+  }
+
+  @ReactMethod
+  public void hideCurrentInAppMessage() {
+    AppboyInAppMessageManager.getInstance().hideCurrentlyDisplayingInAppMessage(true);
+  }
+
+  @ReactMethod
+  public void setAttributionData(String network, String campaign, String adGroup, String creative) {
+    AttributionData attributionData = new AttributionData(network, campaign, adGroup, creative);
+    Appboy.getInstance(getReactApplicationContext()).getCurrentUser().setAttributionData(attributionData);
+  }
+
+  @ReactMethod
+  public void getInstallTrackingId(Callback callback) {
+    reportResultWithCallback(callback, null, Appboy.getInstance(getReactApplicationContext()).getInstallTrackingId());
   }
 
   private Month parseMonth(int monthInt) {

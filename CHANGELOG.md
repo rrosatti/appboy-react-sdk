@@ -1,3 +1,60 @@
+## 1.11.1
+
+##### Added
+- Added Typescript definitions for the `Appboy` interface.
+  - Thanks @ahanriat and @josin for your contributions! See https://github.com/Appboy/appboy-react-sdk/pull/57 and https://github.com/Appboy/appboy-react-sdk/pull/38.
+  - Note that certain less-used parts of the API were excluded. Please file an issue if you would like specific method(s) added.
+
+## 1.11.0
+
+##### Breaking
+- Updated the native Android bridge to [Braze Android SDK 3.2.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#320).
+  - Added `AppboyFirebaseMessagingService` to directly use the Firebase messaging event `com.google.firebase.MESSAGING_EVENT`. This is now the recommended way to integrate Firebase push with Braze. The `AppboyFcmReceiver` should be removed from your `AndroidManifest` and replaced with the following:
+    ```
+    <service android:name="com.appboy.AppboyFirebaseMessagingService">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+    ```
+    - Also note that any `c2dm` related permissions should be removed from your manifest as Braze does not require any extra permissions for `AppboyFirebaseMessagingService` to work correctly.
+- Updated the native iOS bridge to [Braze iOS SDK 3.14.0](https://github.com/Appboy/appboy-ios-sdk/releases/tag/3.14.0).
+  - Dropped support for iOS 8.
+
+##### Added
+- Added support for sending JavaScript `Date()` type custom event and purchase properties through the `Appboy` interface.
+
+## 1.10.0
+
+##### Breaking
+- Updated the native Android bridge to [Braze Android SDK 3.1.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#310).
+
+##### Added
+- Added `addAlias(aliasName, aliasLabel)` to the `Appboy` interface to allow aliasing users.
+  - Thanks @alexmbp!
+
+##### Changed
+- Updated `build.gradle` to use `project.ext` config if available.
+
+## 1.9.0
+
+##### Breaking
+- Updated the native iOS bridge to [Braze iOS SDK 3.11.0](https://github.com/Appboy/appboy-ios-sdk/releases/tag/3.11.0).
+- Updated the native Android bridge to [Braze Android SDK 3.0.1](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#301).
+- Updated the Android wrapper to use `api` and `implementation` syntax in it's `build.gradle` instead of `compile`. As part of this work, the Android Gradle plugin version was updated to `3.2.1`.
+
+##### Added
+- Added `setUserAttributionData()` to the `Appboy` interface to allow setting the attribution data for the current user.
+- Added `getInstallTrackingId()` to the `Appboy` interface to allow getting the install tracking id. This method is equivalent to calling `Appboy.getInstallTrackingId()` on Android and returns the IDFV on iOS.
+- Added `setLanguage()` to the `Appboy` interface to allow setting a language for the current user.
+- Added `hideCurrentInAppMessage()` to the `Appboy` interface to allow hiding of the currently displayed in-app message.
+
+##### Fixed
+- Fixed an issue where the Android wrapper would include an older version of React Native in test APK builds.
+
+##### Changed
+- Updated our sample projects to use React Native `0.56`.
+
 ## 1.8.1
 
 ##### Changed
