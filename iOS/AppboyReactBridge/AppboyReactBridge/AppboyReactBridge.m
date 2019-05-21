@@ -307,6 +307,11 @@ RCT_EXPORT_METHOD(requestFeedRefresh) {
 
 RCT_EXPORT_METHOD(getFeedCards:(RCTResponseSenderBlock)callback) {
   NSMutableArray *jsonCards = [NSMutableArray array];
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                         selector:@selector(feedUpdated:)
+                                             name:ABKFeedUpdatedNotification
+                                           object:nil];
   NSArray *cards = [[Appboy sharedInstance].feedController getCardsInCategories:ABKCardCategoryAll];
 
   if (cards.count == 0 && [Appboy sharedInstance].feedController.lastUpdate == nil) {
